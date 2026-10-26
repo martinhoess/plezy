@@ -110,6 +110,17 @@ import MediaPlayer
     backupExclusionChannel = channel
   }
 
+  /// While the screen is dimmed for an external display it stays dark;
+  /// the value takes effect when the dim ends.
+  private func applyBrightness(_ value: CGFloat, to screen: UIScreen) {
+    let manager = ExternalDisplayManager.shared
+    if manager.brightnessBeforeDim != nil {
+      manager.brightnessBeforeDim = value
+    } else {
+      screen.brightness = value
+    }
+  }
+
   private func handleDeviceAdjustmentCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "getBrightness":
@@ -121,17 +132,18 @@ import MediaPlayer
         return
       }
       if let override = brightnessOverride, override.screen !== screen {
-        override.screen.brightness = override.original
+        applyBrightness(override.original, to: override.screen)
         brightnessOverride = nil
       }
       if brightnessOverride == nil {
-        brightnessOverride = (screen, screen.brightness)
+        // While dimmed for an external display, the current value is the dim, not the user's.
+        brightnessOverride = (screen, ExternalDisplayManager.shared.brightnessBeforeDim ?? screen.brightness)
       }
-      screen.brightness = CGFloat(value)
+      applyBrightness(CGFloat(value), to: screen)
       result(nil)
     case "restoreBrightness":
       if let override = brightnessOverride {
-        override.screen.brightness = override.original
+        applyBrightness(override.original, to: override.screen)
         brightnessOverride = nil
       }
       result(nil)
