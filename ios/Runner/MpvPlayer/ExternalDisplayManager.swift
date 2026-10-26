@@ -67,6 +67,24 @@ final class ExternalDisplayManager {
     externalRootViewController?.view
   }
 
+  /// Brightness of the device screen from before it was dimmed for external playback.
+  var brightnessBeforeDim: CGFloat?
+
+  /// The device screen only carries the controls while video plays externally,
+  /// so it drops to minimum brightness to save power.
+  /// shortcut: iOS restores the user brightness when the app leaves the
+  /// foreground, and the dim is not reapplied on return; reapply on scene
+  /// activation if that matters.
+  func setDeviceScreenDimmed(_ dimmed: Bool) {
+    if dimmed, brightnessBeforeDim == nil {
+      brightnessBeforeDim = UIScreen.main.brightness
+      UIScreen.main.brightness = 0
+    } else if !dimmed, let previous = brightnessBeforeDim {
+      brightnessBeforeDim = nil
+      UIScreen.main.brightness = previous
+    }
+  }
+
   func attach(core: MpvPlayerCore) {
     activeCore = core
     discoverExistingExternalScene()

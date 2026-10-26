@@ -83,7 +83,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     isVisible = visible
     if visible { refreshExternalDisplayAttachment() }
     setContainerHidden(!visible)
-    if !visible { mainBlankView?.isHidden = true }
+    if !visible {
+      mainBlankView?.isHidden = true
+      #if os(iOS)
+        ExternalDisplayManager.shared.setDeviceScreenDimmed(false)
+      #endif
+    }
   }
 
   func updateFrame(_ frame: CGRect? = nil) {
@@ -203,6 +208,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   private func setMainBlankViewVisible(_ visible: Bool) {
+    #if os(iOS)
+      ExternalDisplayManager.shared.setDeviceScreenDimmed(visible && window != nil)
+    #endif
     guard visible, let window else {
       mainBlankView?.removeFromSuperview()
       mainBlankView = nil
@@ -825,6 +833,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     NotificationCenter.default.removeObserver(self)
     #if os(iOS)
+      ExternalDisplayManager.shared.setDeviceScreenDimmed(false)
       ExternalDisplayManager.shared.detach(core: self)
     #endif
     disposeSharedState(destroySynchronously: false)
