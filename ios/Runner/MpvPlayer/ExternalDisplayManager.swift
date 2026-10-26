@@ -67,8 +67,27 @@ final class ExternalDisplayManager {
     externalRootViewController?.view
   }
 
+  /// Brightness of the device screen from before it was dimmed for external playback.
+  var brightnessBeforeDim: CGFloat?
+
+  /// The device screen only carries the controls while video plays externally,
+  /// so it drops to minimum brightness to save power.
+  /// shortcut: iOS restores the user brightness when the app leaves the
+  /// foreground, and the dim is not reapplied on return; reapply on scene
+  /// activation if that matters.
+  func setDeviceScreenDimmed(_ dimmed: Bool) {
+    if dimmed, brightnessBeforeDim == nil {
+      brightnessBeforeDim = UIScreen.main.brightness
+      UIScreen.main.brightness = 0
+    } else if !dimmed, let previous = brightnessBeforeDim {
+      brightnessBeforeDim = nil
+      UIScreen.main.brightness = previous
+    }
+  }
+
   func attach(core: MpvPlayerCore) {
     activeCore = core
+    registerSceneAccessory()
     discoverExistingExternalScene()
     activeCore?.externalDisplayDidChange()
   }
@@ -76,7 +95,42 @@ final class ExternalDisplayManager {
   func detach(core: MpvPlayerCore) {
     if activeCore === core {
       activeCore = nil
+      unregisterSceneAccessory()
     }
+  }
+
+  private var sceneAccessoryRegistration: AnyObject?
+  private weak var sceneAccessoryHost: UIViewController?
+
+  /// From iOS 27 the system connects an external-display scene only to apps
+  /// that registered a scene accessory; without one it mirrors the device.
+  /// Registered only while a player exists, so browsing stays mirrored.
+  private func registerSceneAccessory() {
+    #if compiler(>=6.4)
+      guard #available(iOS 27.0, *), sceneAccessoryRegistration == nil,
+        let host = Self.mainApplicationWindow()?.rootViewController
+      else { return }
+
+      let configuration = UISceneConfiguration(
+        name: "external-display", sessionRole: .windowExternalDisplayNonInteractive)
+      configuration.delegateClass = ExternalDisplaySceneDelegate.self
+      sceneAccessoryRegistration = host.registerSceneAccessory(
+        .externalNonInteractive(sceneConfiguration: configuration))
+      sceneAccessoryHost = host
+      MpvLog.debug("[ExternalDisplayManager] Registered external display scene accessory")
+    #endif
+  }
+
+  private func unregisterSceneAccessory() {
+    #if compiler(>=6.4)
+      if #available(iOS 27.0, *),
+        let registration = sceneAccessoryRegistration as? UISceneAccessoryRegistration
+      {
+        sceneAccessoryHost?.unregisterSceneAccessory(registration)
+      }
+    #endif
+    sceneAccessoryRegistration = nil
+    sceneAccessoryHost = nil
   }
 
   @discardableResult
