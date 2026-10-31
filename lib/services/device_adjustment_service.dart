@@ -63,6 +63,18 @@ class DeviceAdjustmentService {
     });
   }
 
+  /// Asks iOS to hold landscape, which is the only lock iPadOS honours while
+  /// the app can multitask. Other platforms have no handler and ignore it.
+  Future<void> setLandscapeLocked(bool locked) async {
+    try {
+      await _channel.invokeMethod<void>('setLandscapeLocked', locked);
+    } on MissingPluginException {
+      // Unsupported platform: the preferred orientations are all it needs.
+    } on PlatformException catch (error, stackTrace) {
+      appLogger.w('Failed to set the landscape lock', error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _enqueueBrightnessOperation(Future<void> Function() operation) {
     final next = _brightnessQueue.catchError((_) {}).then((_) => operation());
     _brightnessQueue = next.catchError((_) {});

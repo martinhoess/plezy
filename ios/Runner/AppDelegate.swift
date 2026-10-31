@@ -147,6 +147,14 @@ import MediaPlayer
         brightnessOverride = nil
       }
       result(nil)
+    case "setLandscapeLocked":
+      guard let locked = call.arguments as? Bool else {
+        result(FlutterError(code: "DEVICE_ADJUSTMENT_INVALID_ARGUMENT", message: "Expected a bool", details: nil))
+        return
+      }
+      let root = ExternalDisplayManager.mainApplicationWindow()?.rootViewController
+      (root as? PlezyFlutterViewController)?.isLandscapeLockRequested = locked
+      result(nil)
     case "getMediaVolume":
       result(Double(AVAudioSession.sharedInstance().outputVolume))
     case "setMediaVolume":
