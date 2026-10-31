@@ -143,4 +143,35 @@ class PlezyFlutterViewController: FlutterViewController {
       }
     }
   #endif
+
+  // MARK: Landscape lock
+
+  /// iPadOS ignores Flutter's preferred orientations while the app can
+  /// multitask, and from iPadOS 26 no app can opt out of that, so the
+  /// player's landscape lock holds the scene here.
+  var isLandscapeLockRequested = false {
+    didSet { updateOrientationLock() }
+  }
+
+  /// Holds landscape only, so an iPad held upright can still turn into it.
+  /// The held side stays until unlocked: iPadOS refuses a turn to the other
+  /// landscape side here, and releasing the hold for one lets the next device
+  /// turn land in portrait. iPhone is left alone: its preferred orientations
+  /// already work.
+  @available(iOS 26.0, *)
+  override var prefersInterfaceOrientationLocked: Bool {
+    isLandscapeLockRequested && traitCollection.userInterfaceIdiom == .pad
+      && view.window?.windowScene?.effectiveGeometry.interfaceOrientation.isLandscape == true
+  }
+
+  override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    super.viewWillTransition(to: size, with: coordinator)
+    coordinator.animate(alongsideTransition: nil) { [weak self] _ in self?.updateOrientationLock() }
+  }
+
+  private func updateOrientationLock() {
+    if #available(iOS 26.0, *) {
+      setNeedsUpdateOfPrefersInterfaceOrientationLocked()
+    }
+  }
 }

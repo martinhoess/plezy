@@ -75,6 +75,24 @@ void main() {
       ]);
     });
 
+    test('the native landscape lock follows the requests, because iPadOS ignores them', () async {
+      TvDetectionService.debugSetAppleTVOverride(false);
+      TvDetectionService.debugSetAutomotiveOverride(false);
+      const channel = MethodChannel('com.plezy/device_adjustment');
+      final lockCalls = <Object?>[];
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'setLandscapeLocked') lockCalls.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+      await OrientationHelper.lockLandscapeOrientation();
+      await OrientationHelper.restoreDefaultOrientations();
+
+      expect(lockCalls, [true, false]);
+    });
+
     // A TV never rotates, and the request is not free: Flutter sends the full
     // set as SCREEN_ORIENTATION_FULL_USER, which lets WindowManager pick the
     // 180° rotation it withholds from apps that ask for nothing — the whole UI
