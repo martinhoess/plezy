@@ -124,7 +124,8 @@ import MediaPlayer
   private func handleDeviceAdjustmentCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "getBrightness":
-      result(activeScreen.map { Double($0.brightness) })
+      // While dimmed for an external display, the current value is the dim, not the user's.
+      result((ExternalDisplayManager.shared.brightnessBeforeDim ?? activeScreen?.brightness).map { Double($0) })
     case "setBrightness":
       guard let value = normalizedArgument(call.arguments, result: result) else { return }
       guard let screen = activeScreen else {
