@@ -866,6 +866,7 @@
     "rotationLockButton": "Drehsperre",
     "lockScreen": "Bildschirm sperren",
     "screenLockButton": "Bildschirmsperre",
+    "holdToUnlock": "Zum Entsperren gedrückt halten",
     "tapToUnlock": "",
     "tapAgainToUnlock": "",
     "timelineSlider": "Videozeitleiste",
