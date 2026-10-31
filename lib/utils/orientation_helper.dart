@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import '../services/device_adjustment_service.dart';
 import 'platform_detector.dart';
 
 class OrientationHelper {
@@ -23,16 +24,20 @@ class OrientationHelper {
   /// the video player to restore the app's default orientation behavior.
   static Future<void> restoreDefaultOrientations() async {
     if (_platformOwnsOrientation) return;
-    await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    // Independent requests: a missing reply must not leave the lock in place.
+    await Future.wait<void>([
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values),
+      DeviceAdjustmentService.instance.setLandscapeLocked(false),
+    ]);
   }
 
   /// Pins playback to landscape without touching system UI, for the player's
   /// rotation-lock toggle.
   static Future<void> lockLandscapeOrientation() async {
     if (_platformOwnsOrientation) return;
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
+    await Future.wait<void>([
+      SystemChrome.setPreferredOrientations(const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]),
+      DeviceAdjustmentService.instance.setLandscapeLocked(true),
     ]);
   }
 
