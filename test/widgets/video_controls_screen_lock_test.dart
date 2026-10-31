@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -23,11 +24,9 @@ import '../test_helpers/player_streams.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
-/// The touch lock has to hold against a small child. It used to unlock on a
-/// long press anywhere on the picture, which is exactly what a child holding
-/// the screen produces. Unlocking now takes a tap to reveal the unlock button
-/// and two taps on the button itself; a hold, a stray tap, or a second finger
-/// never advances it.
+/// The touch lock has to open by feel, because a device dimmed for an external
+/// display shows nothing to aim at: a hold anywhere unlocks. A tap only toggles
+/// the hint, and a contact with a second finger counts for nothing.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -121,18 +120,11 @@ void main() {
 
   bool isLocked() => find.byType(ScreenLockOverlay).evaluate().isNotEmpty;
 
-  /// The prompt the viewer can currently see, or null while it is hidden.
-  String? visiblePrompt(WidgetTester tester) {
-    for (final label in [t.videoControls.tapToUnlock, t.videoControls.tapAgainToUnlock]) {
-      final text = find.text(label);
-      if (text.evaluate().isEmpty) continue;
-      final opacity = tester.widget<AnimatedOpacity>(find.ancestor(of: text, matching: find.byType(AnimatedOpacity)));
-      return opacity.opacity > 0 ? label : null;
-    }
-    return null;
+  /// Whether the viewer can currently see the hint.
+  bool hintVisible(WidgetTester tester) {
+    final text = find.text(t.videoControls.holdToUnlock);
+    return tester.widget<AnimatedOpacity>(find.ancestor(of: text, matching: find.byType(AnimatedOpacity))).opacity > 0;
   }
-
-  Offset buttonCentre(WidgetTester tester) => tester.getCenter(find.text(t.videoControls.tapToUnlock));
 
   Offset pictureCentre(WidgetTester tester) => tester.getRect(find.byType(PlexVideoControls)).center;
 
@@ -147,24 +139,19 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   }
 
-  testWidgets('reveal, tap and confirm unlocks without touching playback', (tester) async {
+  testWidgets('a hold anywhere unlocks without touching playback', (tester) async {
     await pumpLockedControls(tester);
-    final button = buttonCentre(tester);
     await tester.pump(ScreenLockOverlay.promptDuration);
-    expect(visiblePrompt(tester), isNull, reason: 'the prompt fades after locking');
+    expect(hintVisible(tester), isFalse, reason: 'the hint fades after locking');
 
-    await tapAndSettle(tester, pictureCentre(tester));
-    expect(visiblePrompt(tester), t.videoControls.tapToUnlock);
-
-    await tapAndSettle(tester, button);
-    expect(visiblePrompt(tester), t.videoControls.tapAgainToUnlock);
-    expect(isLocked(), isTrue);
-
-    await tapAndSettle(tester, button);
+    final hold = await tester.startGesture(pictureCentre(tester));
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    await hold.up();
+    await tester.pump(const Duration(milliseconds: 250));
     expect(isLocked(), isFalse);
 
-    // Past the double-tap window: the unlocking tap must not reach the
-    // picture's own tap handling once the shield is gone.
+    // Past the double-tap window: the hold must not reach the picture's own
+    // tap handling once the shield is gone.
     await tester.pump(const Duration(milliseconds: 400));
     expect(chrome.controlsVisible, isTrue);
     expect(transportCommands, isEmpty);
@@ -173,20 +160,15 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('holding never unlocks, on the picture or on the button', (tester) async {
+  testWidgets('a tap only toggles the hint', (tester) async {
     await pumpLockedControls(tester);
-    final button = buttonCentre(tester);
+    expect(hintVisible(tester), isTrue);
 
-    final onButton = await tester.startGesture(button);
-    await tester.pump(const Duration(seconds: 2));
-    await onButton.up();
-    await tester.pump(const Duration(milliseconds: 250));
-    expect(visiblePrompt(tester), t.videoControls.tapToUnlock, reason: 'a hold on the button does not arm it');
+    await tapAndSettle(tester, pictureCentre(tester));
+    expect(hintVisible(tester), isFalse);
 
-    final onPicture = await tester.startGesture(pictureCentre(tester));
-    await tester.pump(const Duration(seconds: 10));
-    await onPicture.up();
-    await tester.pump(const Duration(milliseconds: 250));
+    await tapAndSettle(tester, pictureCentre(tester));
+    expect(hintVisible(tester), isTrue);
 
     expect(isLocked(), isTrue);
     expect(transportCommands, isEmpty);
@@ -194,61 +176,27 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('a tap off the armed button disarms and hides it', (tester) async {
-    await pumpLockedControls(tester);
-    final button = buttonCentre(tester);
-
-    await tapAndSettle(tester, button);
-    expect(visiblePrompt(tester), t.videoControls.tapAgainToUnlock);
-
-    await tapAndSettle(tester, pictureCentre(tester));
-    expect(visiblePrompt(tester), isNull);
-
-    // The hidden button is not a target: this tap only reveals it again.
-    await tapAndSettle(tester, button);
-    expect(visiblePrompt(tester), t.videoControls.tapToUnlock);
-    expect(isLocked(), isTrue);
-
-    await close(tester);
-  });
-
-  testWidgets('an armed button that is not confirmed in time starts over', (tester) async {
-    await pumpLockedControls(tester);
-    final button = buttonCentre(tester);
-
-    await tapAndSettle(tester, button);
-    expect(visiblePrompt(tester), t.videoControls.tapAgainToUnlock);
-
-    await tester.pump(ScreenLockOverlay.promptDuration);
-    expect(visiblePrompt(tester), isNull);
-
-    await tapAndSettle(tester, button);
-    expect(visiblePrompt(tester), t.videoControls.tapToUnlock, reason: 'revealed, not armed');
-    expect(isLocked(), isTrue);
-
-    await close(tester);
-  });
-
   testWidgets('a contact with a second finger counts for nothing', (tester) async {
     await pumpLockedControls(tester);
-    final button = buttonCentre(tester);
+    await tester.pump(ScreenLockOverlay.promptDuration);
 
-    final first = await tester.startGesture(button, pointer: 11);
-    final second = await tester.startGesture(pictureCentre(tester), pointer: 12);
+    final first = await tester.startGesture(pictureCentre(tester), pointer: 11);
+    final second = await tester.startGesture(pictureCentre(tester) + const Offset(80, 0), pointer: 12);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
     await first.up();
     await second.up();
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(visiblePrompt(tester), isNull, reason: 'neither finger may arm or reveal');
+    expect(hintVisible(tester), isFalse, reason: 'neither finger may reveal the hint');
     expect(isLocked(), isTrue);
     expect(transportCommands, isEmpty, reason: 'the two-finger pause is locked out too');
     expect(player.state.playing, isTrue);
 
     // The next single-finger sequence works normally again.
-    await tapAndSettle(tester, pictureCentre(tester));
-    await tapAndSettle(tester, button);
-    expect(visiblePrompt(tester), t.videoControls.tapAgainToUnlock);
-    await tapAndSettle(tester, button);
+    final hold = await tester.startGesture(pictureCentre(tester), pointer: 13);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    await hold.up();
+    await tester.pump(const Duration(milliseconds: 250));
     expect(isLocked(), isFalse);
 
     await close(tester);
