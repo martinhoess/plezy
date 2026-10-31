@@ -72,9 +72,6 @@ final class ExternalDisplayManager {
 
   /// The device screen only carries the controls while video plays externally,
   /// so it drops to minimum brightness to save power.
-  /// shortcut: iOS restores the user brightness when the app leaves the
-  /// foreground, and the dim is not reapplied on return; reapply on scene
-  /// activation if that matters.
   func setDeviceScreenDimmed(_ dimmed: Bool) {
     if dimmed, brightnessBeforeDim == nil {
       brightnessBeforeDim = UIScreen.main.brightness

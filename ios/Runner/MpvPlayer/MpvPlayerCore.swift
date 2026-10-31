@@ -891,6 +891,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterBackground() {
+    #if os(iOS)
+      // Brightness outlives the app until the device locks, so the dim must not
+      // follow it out; scene activation dims again on return.
+      ExternalDisplayManager.shared.setDeviceScreenDimmed(false)
+    #endif
     setBackgrounded(true)
     if isPipActive || isPipStarting {
       MpvLog.debug("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
