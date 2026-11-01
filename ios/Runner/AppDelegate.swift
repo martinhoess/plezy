@@ -110,22 +110,10 @@ import MediaPlayer
     backupExclusionChannel = channel
   }
 
-  /// While the screen is dimmed for an external display it stays dark;
-  /// the value takes effect when the dim ends.
-  private func applyBrightness(_ value: CGFloat, to screen: UIScreen) {
-    let manager = ExternalDisplayManager.shared
-    if manager.brightnessBeforeDim != nil {
-      manager.brightnessBeforeDim = value
-    } else {
-      screen.brightness = value
-    }
-  }
-
   private func handleDeviceAdjustmentCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "getBrightness":
-      // While dimmed for an external display, the current value is the dim, not the user's.
-      result((ExternalDisplayManager.shared.brightnessBeforeDim ?? activeScreen?.brightness).map { Double($0) })
+      result(activeScreen.map { Double(ExternalDisplayManager.shared.userBrightness(of: $0)) })
     case "setBrightness":
       guard let value = normalizedArgument(call.arguments, result: result) else { return }
       guard let screen = activeScreen else {
@@ -133,18 +121,17 @@ import MediaPlayer
         return
       }
       if let override = brightnessOverride, override.screen !== screen {
-        applyBrightness(override.original, to: override.screen)
+        ExternalDisplayManager.shared.setUserBrightness(override.original, on: override.screen)
         brightnessOverride = nil
       }
       if brightnessOverride == nil {
-        // While dimmed for an external display, the current value is the dim, not the user's.
-        brightnessOverride = (screen, ExternalDisplayManager.shared.brightnessBeforeDim ?? screen.brightness)
+        brightnessOverride = (screen, ExternalDisplayManager.shared.userBrightness(of: screen))
       }
-      applyBrightness(CGFloat(value), to: screen)
+      ExternalDisplayManager.shared.setUserBrightness(CGFloat(value), on: screen)
       result(nil)
     case "restoreBrightness":
       if let override = brightnessOverride {
-        applyBrightness(override.original, to: override.screen)
+        ExternalDisplayManager.shared.setUserBrightness(override.original, on: override.screen)
         brightnessOverride = nil
       }
       result(nil)
