@@ -67,18 +67,34 @@ final class ExternalDisplayManager {
     externalRootViewController?.view
   }
 
-  /// Brightness of the device screen from before it was dimmed for external playback.
-  var brightnessBeforeDim: CGFloat?
+  /// The screen dimmed for external playback and its brightness from before.
+  private var dim: (screen: UIScreen, brightness: CGFloat)?
 
   /// The device screen only carries the controls while video plays externally,
-  /// so it drops to minimum brightness to save power.
+  /// so it drops to minimum brightness to save power. The app's own screen, not
+  /// `UIScreen.main`: on iPhone Duo that is the outer display (#2861).
   func setDeviceScreenDimmed(_ dimmed: Bool) {
-    if dimmed, brightnessBeforeDim == nil {
-      brightnessBeforeDim = UIScreen.main.brightness
-      UIScreen.main.brightness = 0
-    } else if !dimmed, let previous = brightnessBeforeDim {
-      brightnessBeforeDim = nil
-      UIScreen.main.brightness = previous
+    if dimmed, dim == nil, let screen = Self.mainApplicationWindow()?.windowScene?.screen {
+      dim = (screen, screen.brightness)
+      screen.brightness = 0
+    } else if !dimmed, let dim {
+      self.dim = nil
+      dim.screen.brightness = dim.brightness
+    }
+  }
+
+  /// While dimmed, the current value of the screen is the dim, not the user's.
+  func userBrightness(of screen: UIScreen) -> CGFloat {
+    guard let dim, dim.screen === screen else { return screen.brightness }
+    return dim.brightness
+  }
+
+  /// A dimmed screen stays dark; the value takes effect when the dim ends.
+  func setUserBrightness(_ value: CGFloat, on screen: UIScreen) {
+    if dim?.screen === screen {
+      dim?.brightness = value
+    } else {
+      screen.brightness = value
     }
   }
 
