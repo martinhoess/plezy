@@ -209,7 +209,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   private func setMainBlankViewVisible(_ visible: Bool) {
     #if os(iOS)
-      ExternalDisplayManager.shared.setDeviceScreenDimmed(visible && window != nil)
+      // Auto-PiP keeps the player visible in the background, where a dim would stay until the device locks.
+      let inForeground = window?.windowScene.map { $0.activationState != .background } ?? false
+      ExternalDisplayManager.shared.setDeviceScreenDimmed(visible && inForeground)
     #endif
     guard visible, let window else {
       mainBlankView?.removeFromSuperview()
