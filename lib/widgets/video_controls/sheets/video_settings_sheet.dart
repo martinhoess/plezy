@@ -89,18 +89,29 @@ class _SettingsMenuItem extends StatelessWidget {
       overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
     );
 
-    return FocusableListTile(
-      leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : t.textMuted),
-      title: Text(title),
-      trailing: Row(
-        mainAxisSize: .min,
-        children: [
-          if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
-          const SizedBox(width: 8),
-          AppIcon(Symbols.chevron_right_rounded, fill: 1, color: t.textMuted),
-        ],
+    final trailing = Row(
+      mainAxisSize: .min,
+      children: [
+        if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
+        const SizedBox(width: 8),
+        AppIcon(Symbols.chevron_right_rounded, fill: 1, color: t.textMuted),
+      ],
+    );
+
+    // ListTile lets the trailing widget take the full row, so a long value
+    // (a file name) squeezed the title to a letter per line.
+    return LayoutBuilder(
+      builder: (context, constraints) => FocusableListTile(
+        leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : t.textMuted),
+        title: Text(title),
+        trailing: allowValueOverflow
+            ? ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth / 2),
+                child: trailing,
+              )
+            : trailing,
+        onTap: onTap,
       ),
-      onTap: onTap,
     );
   }
 }
