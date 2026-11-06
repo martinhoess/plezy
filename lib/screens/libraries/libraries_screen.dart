@@ -42,6 +42,8 @@ import 'tabs/base_library_tab.dart';
 enum LibraryTabType { recommended, browse, collections, playlists, genres }
 
 List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
+  // Fork-only: builds with --dart-define=PLEZY_BROWSE_ONLY=true show Browse alone.
+  if (const bool.fromEnvironment('PLEZY_BROWSE_ONLY')) return [LibraryTabType.browse];
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
   // Genres filter the library's own type; only movie and show libraries
   // browse a type both backends tag with genres.
