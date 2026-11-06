@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import '../i18n/strings.g.dart';
 import '../services/app_exit_service.dart';
+import '../services/icloud_settings_sync_service.dart';
 import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
@@ -517,6 +518,8 @@ class _MainScreenState extends State<MainScreen>
   static const _startupSettleFallback = Duration(seconds: 15);
   static const _backExitWindow = Duration(seconds: 3);
   DateTime? _lastBackPressAt;
+  StreamSubscription<void>? _icloudSettingsChanges;
+  Timer? _icloudSettingsPushTimer;
 
   @override
   void initState() {
@@ -526,6 +529,23 @@ class _MainScreenState extends State<MainScreen>
 
     WidgetsBinding.instance.addObserver(this);
     _contentFocusScope.addListener(_syncSidebarFocusWithContent);
+    if (ICloudSettingsSyncService.isSupported) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(ICloudSettingsSyncService.pull(context));
+      });
+      // Applying can rebuild the root, so a change that lands during playback
+      // waits for the next resume.
+      _icloudSettingsChanges = ICloudSettingsSyncService.externalChanges.listen((_) {
+        if (mounted && VideoPlayerScreenState.activeGlobalKey == null) {
+          unawaited(ICloudSettingsSyncService.pull(context));
+        }
+      });
+      // Library sort, filters and other settings change outside the settings
+      // screen; a periodic push carries them without hooking every write.
+      _icloudSettingsPushTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        unawaited(ICloudSettingsSyncService.push());
+      });
+    }
 
     if (PlatformDetector.isDesktopOS()) {
       windowManager.addListener(this);
@@ -1038,6 +1058,8 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void dispose() {
+    _icloudSettingsChanges?.cancel();
+    _icloudSettingsPushTimer?.cancel();
     if (_watchTogether?.navigatorOpener == _navigateToWatchTogetherMedia) _watchTogether?.navigatorOpener = null;
     WidgetsBinding.instance.removeObserver(this);
     _profileRouteObserver?.unsubscribe(this);
@@ -1140,6 +1162,8 @@ class _MainScreenState extends State<MainScreen>
       _showProfileSelectionOnResume();
     }
     if (refreshStaleContent) _refreshContentAfterStaleResume();
+    if (state == AppLifecycleState.resumed) unawaited(ICloudSettingsSyncService.pull(context));
+    if (state == AppLifecycleState.paused) unawaited(ICloudSettingsSyncService.push());
   }
 
   /// Refetch the content tabs after the app resumes from a long backgrounding.
