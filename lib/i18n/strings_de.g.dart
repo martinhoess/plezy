@@ -422,6 +422,8 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get importSettingsConfirm => 'Dies ersetzt deine aktuellen Einstellungen. Fortfahren?';
 	@override String get importSettingsSuccess => 'Einstellungen importiert';
 	@override String get importSettingsInvalidFile => 'Diese Datei ist kein gültiger Plezy-Einstellungsexport';
+	@override String get icloudSettingsSync => 'Einstellungen über iCloud synchronisieren';
+	@override String get icloudSettingsSyncDescription => 'Hält die Einstellungen auf deinen Apple-Geräten gleich. Beim Einschalten werden die Einstellungen aus iCloud übernommen.';
 	@override String get importSettingsNoUser => 'Vor dem Import bitte anmelden';
 	@override String get shortcutsReset => 'Tastenkürzel auf Standard zurückgesetzt';
 	@override String get resetShortcutsConfirm => 'Dadurch werden deine eigenen Tastenkürzel durch die Standardwerte ersetzt. Fortfahren?';
@@ -3706,6 +3708,8 @@ extension on TranslationsDe {
 			'settings.importSettingsConfirm' => 'Dies ersetzt deine aktuellen Einstellungen. Fortfahren?',
 			'settings.importSettingsSuccess' => 'Einstellungen importiert',
 			'settings.importSettingsInvalidFile' => 'Diese Datei ist kein gültiger Plezy-Einstellungsexport',
+			'settings.icloudSettingsSync' => 'Einstellungen über iCloud synchronisieren',
+			'settings.icloudSettingsSyncDescription' => 'Hält die Einstellungen auf deinen Apple-Geräten gleich. Beim Einschalten werden die Einstellungen aus iCloud übernommen.',
 			'settings.importSettingsNoUser' => 'Vor dem Import bitte anmelden',
 			'settings.shortcutsReset' => 'Tastenkürzel auf Standard zurückgesetzt',
 			'settings.resetShortcutsConfirm' => 'Dadurch werden deine eigenen Tastenkürzel durch die Standardwerte ersetzt. Fortfahren?',
@@ -3909,10 +3913,10 @@ extension on TranslationsDe {
 			'themeEditor.slots.bg' => 'Hintergrund',
 			'themeEditor.slots.surface' => 'Oberfläche',
 			'themeEditor.slots.outline' => 'Kontur',
-			'themeEditor.slots.text' => 'Text',
-			'themeEditor.slots.textMuted' => 'Sekundärtext',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Sekundärtext',
 			'themeEditor.slots.accent' => 'Akzent',
 			'themeEditor.opacity' => 'Deckkraft',
 			'themeEditor.hexHint' => '#RRGGBB oder #AARRGGBB',
@@ -4423,10 +4427,10 @@ extension on TranslationsDe {
 			'profiles.pinProtectionOptional' => 'PIN-Schutz (optional)',
 			'profiles.pinExplain' => '4-stellige PIN zum Profilwechsel erforderlich.',
 			'profiles.continueButton' => 'Weiter',
-			'profiles.pinsDontMatch' => 'PINs stimmen nicht überein',
-			'profiles.tokenIdentityMismatch' => 'Das Plex-Profil-Token wurde einem unerwarteten Server zugeordnet',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinsDontMatch' => 'PINs stimmen nicht überein',
+			'profiles.tokenIdentityMismatch' => 'Das Plex-Profil-Token wurde einem unerwarteten Server zugeordnet',
 			'connections.sectionTitle' => 'Verbindungen',
 			'connections.addConnection' => 'Verbindung hinzufügen',
 			'connections.addConnectionSubtitleNoProfile' => 'Mit Plex anmelden oder mit einem Jellyfin- oder Emby-Server verbinden',
@@ -4937,10 +4941,10 @@ extension on TranslationsDe {
 			'liveTv.recordSettings.endLate' => 'Später beenden (Sekunden)',
 			'liveTv.recordSettings.newOnly' => 'Nur neue Episoden',
 			'liveTv.recordSettings.anyChannel' => 'Auf jedem Sender aufnehmen',
-			'liveTv.recordSettings.anyTime' => 'Zu jeder Zeit aufnehmen',
-			'liveTv.recordSettings.skipInLibrary' => 'Episoden überspringen, die schon in der Bibliothek sind',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.anyTime' => 'Zu jeder Zeit aufnehmen',
+			'liveTv.recordSettings.skipInLibrary' => 'Episoden überspringen, die schon in der Bibliothek sind',
 			'liveTv.recordSettings.keepUpTo' => 'Zu behaltende Episoden',
 			'liveTv.recordSettings.keepUpToHint' => '0 behält alle Episoden',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Beginnt in ${minutes} Min.',
@@ -5451,10 +5455,10 @@ extension on TranslationsDe {
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',

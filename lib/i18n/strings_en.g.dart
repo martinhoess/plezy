@@ -935,6 +935,12 @@ class Translations$settings$en {
 	/// en: 'This file isn't a valid Plezy settings export'
 	String get importSettingsInvalidFile => 'This file isn\'t a valid Plezy settings export';
 
+	/// en: 'Sync settings with iCloud'
+	String get icloudSettingsSync => 'Sync settings with iCloud';
+
+	/// en: 'Keep settings the same on your Apple devices. Turning this on adopts the settings already in iCloud.'
+	String get icloudSettingsSyncDescription => 'Keep settings the same on your Apple devices. Turning this on adopts the settings already in iCloud.';
+
 	/// en: 'Sign in before importing settings'
 	String get importSettingsNoUser => 'Sign in before importing settings';
 
@@ -8429,6 +8435,8 @@ extension on Translations {
 			'settings.importSettingsConfirm' => 'This will replace your current settings. Continue?',
 			'settings.importSettingsSuccess' => 'Settings imported',
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
+			'settings.icloudSettingsSync' => 'Sync settings with iCloud',
+			'settings.icloudSettingsSyncDescription' => 'Keep settings the same on your Apple devices. Turning this on adopts the settings already in iCloud.',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
 			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
@@ -8632,10 +8640,10 @@ extension on Translations {
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
-			'themeEditor.slots.text' => 'Text',
-			'themeEditor.slots.textMuted' => 'Secondary text',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -9146,10 +9154,10 @@ extension on Translations {
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
-			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
-			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
+			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
@@ -9660,10 +9668,10 @@ extension on Translations {
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
-			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
-			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
+			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
@@ -10174,10 +10182,10 @@ extension on Translations {
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
-			'performanceOverlay.speed' => 'Speed',
-			'performanceOverlay.player' => 'Player',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.speed' => 'Speed',
+			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',

@@ -68,6 +68,10 @@ import MediaPlayer
       AppIconPlugin.register(with: registrar)
     }
 
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ICloudSettingsPlugin") {
+      ICloudSettingsPlugin.register(with: registrar)
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeepLinkPlugin") {
       DeepLinkPlugin.register(with: registrar)
     }

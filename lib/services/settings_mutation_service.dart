@@ -10,6 +10,8 @@ import '../profiles/active_profile_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
 import '../providers/download_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
+import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/platform_detector.dart';
 import 'device_performance.dart';
@@ -232,6 +234,23 @@ class SettingsMutationService {
     }
     if (context.mounted && !listEquals(previousRootConfiguration, captureRootConfiguration())) rebuild(context);
     return failures;
+  }
+
+  /// Publishes settings an import wrote straight to storage, then applies
+  /// their effects. Shared by the import file and iCloud settings sync.
+  Future<List<SettingsEffectFailure>> applyImportedSettings(
+    BuildContext context, {
+    required List<Object?> previousRootConfiguration,
+  }) async {
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    final librariesProvider = context.read<LibrariesProvider>();
+
+    // Push fresh values into active listenables before providers re-read settings.
+    SettingsService.instance.refreshListenables();
+    await hiddenLibrariesProvider.refresh();
+    unawaited(librariesProvider.refresh());
+    if (!context.mounted) return const [];
+    return applyStoredEffects(context, previousRootConfiguration: previousRootConfiguration);
   }
 
   /// Whether writing the pref stored under [key] requires a root rebuild. Keyed
