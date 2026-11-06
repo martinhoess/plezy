@@ -329,6 +329,8 @@
     "importSettingsConfirm": "This will replace your current settings. Continue?",
     "importSettingsSuccess": "Settings imported",
     "importSettingsInvalidFile": "This file isn't a valid Plezy settings export",
+    "icloudSettingsSync": "Sync settings with iCloud",
+    "icloudSettingsSyncDescription": "Keep settings the same on your Apple devices. Turning this on adopts the settings already in iCloud.",
     "importSettingsNoUser": "Sign in before importing settings",
     "shortcutsReset": "Shortcuts reset to defaults",
     "resetShortcutsConfirm": "This will replace your custom shortcuts with the defaults. Continue?",

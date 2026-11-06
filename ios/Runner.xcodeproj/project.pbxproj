@@ -28,6 +28,7 @@
 		B1D51A6A2F00110000000020 /* PlezyFlutterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000021 /* PlezyFlutterViewController.swift */; };
 		B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */; };
 		A9C0FF1C2F00120000000001 /* AppIconPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */; };
+		A9C0FF1C2F00130000000001 /* ICloudSettingsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00130000000002 /* ICloudSettingsPlugin.swift */; };
 		A9C0FF1C2F00120000000003 /* AlternateAppIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */; };
 		1FB1E3FC084653353BC7A05F /* DeepLinkDeliveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236F8E4D18840737730E5EDD /* DeepLinkDeliveryCoordinator.swift */; };
 		48BFBE9EA6DCC36FD5AF161B /* DeepLinkPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81440C3D3F557FB52C1CFCD /* DeepLinkPlugin.swift */; };
@@ -89,6 +90,7 @@
 		B1D51A6A2F00110000000021 /* PlezyFlutterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlezyFlutterViewController.swift; sourceTree = "<group>"; };
 		B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDecodeCapabilitiesPlugin.swift; sourceTree = "<group>"; };
 		A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconPlugin.swift; path = ../shared/apple/AppIcon/AppIconPlugin.swift; sourceTree = SOURCE_ROOT; };
+		A9C0FF1C2F00130000000002 /* ICloudSettingsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ICloudSettingsPlugin.swift; path = ../shared/apple/ICloudSettings/ICloudSettingsPlugin.swift; sourceTree = SOURCE_ROOT; };
 		A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AlternateAppIcons.xcassets; sourceTree = "<group>"; };
 		236F8E4D18840737730E5EDD /* DeepLinkDeliveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkDeliveryCoordinator.swift; path = ../shared/apple/DeepLink/DeepLinkDeliveryCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		D81440C3D3F557FB52C1CFCD /* DeepLinkPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkPlugin.swift; path = ../shared/apple/DeepLink/DeepLinkPlugin.swift; sourceTree = SOURCE_ROOT; };
@@ -212,6 +214,7 @@
 				B1D51A6A2F00110000000021 /* PlezyFlutterViewController.swift */,
 				B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */,
 				A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */,
+				A9C0FF1C2F00130000000002 /* ICloudSettingsPlugin.swift */,
 				A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */,
 				236F8E4D18840737730E5EDD /* DeepLinkDeliveryCoordinator.swift */,
 				D81440C3D3F557FB52C1CFCD /* DeepLinkPlugin.swift */,
@@ -452,6 +455,7 @@
 				B1D51A6A2F00110000000020 /* PlezyFlutterViewController.swift in Sources */,
 				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
 				A9C0FF1C2F00120000000001 /* AppIconPlugin.swift in Sources */,
+				A9C0FF1C2F00130000000001 /* ICloudSettingsPlugin.swift in Sources */,
 				1FB1E3FC084653353BC7A05F /* DeepLinkDeliveryCoordinator.swift in Sources */,
 				48BFBE9EA6DCC36FD5AF161B /* DeepLinkPlugin.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
@@ -550,6 +554,7 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = G88U5B5783;
 				ENABLE_BITCODE = NO;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Plezy;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -738,6 +743,7 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = G88U5B5783;
 				ENABLE_BITCODE = NO;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Plezy;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -767,6 +773,7 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = G88U5B5783;
 				ENABLE_BITCODE = NO;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Plezy;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";

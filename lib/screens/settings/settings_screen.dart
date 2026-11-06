@@ -17,13 +17,13 @@ import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
 import '../../providers/account_preferences_controller.dart';
-import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
+import '../../services/icloud_settings_sync_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/seerr_account_provider.dart';
@@ -122,6 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kWatchTogetherRelay = 'watch_together_relay';
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
+  static const _kICloudSettingsSync = 'icloud_settings_sync';
   static const _kAccountPreferences = 'account_preferences';
 
   KeyboardShortcutsService? _keyboardService;
@@ -144,6 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   void dispose() {
+    unawaited(ICloudSettingsSyncService.push());
     _focusTracker.dispose();
     super.dispose();
   }
@@ -236,9 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
                   if (UpdateService.isUpdateCheckAvailable) ...[_buildUpdateSection()],
 
-                  // Hidden on Android TV / tvOS (no document picker); desktop in
-                  // force-TV mode keeps it — FilePickerService works there.
-                  if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
+                  if (_supportsSettingsFiles || ICloudSettingsSyncService.isSupported) _buildBackupSection(),
 
                   const SizedBox(height: 24),
                   SettingsGroup(
@@ -623,26 +623,40 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
+  /// Export and import need a document picker, which Android TV and tvOS lack;
+  /// desktop in force-TV mode keeps them — FilePickerService works there.
+  bool get _supportsSettingsFiles => !PlatformDetector.isTV() || PlatformDetector.isDesktopOS();
+
   Widget _buildBackupSection() {
     return SettingsGroup(
       title: t.settings.backup,
       children: [
-        SettingNavigationTile(
-          focusNode: _focusTracker.get(_kExportSettings),
-          icon: Symbols.upload_rounded,
-          title: t.settings.exportSettings,
-          subtitle: t.settings.exportSettingsDescription,
-          onTap: _handleExportSettings,
-        ),
-        SettingNavigationTile(
-          focusNode: _focusTracker.get(_kImportSettings),
-          icon: Symbols.download_rounded,
-          title: t.settings.importSettings,
-          subtitle: t.settings.importSettingsDescription,
-          onTap: _showImportSettingsDialog,
-        ),
-        // TODO: Cloud settings sync/backup (#1795, #1979) goes here once a
-        // sync backend exists (iCloud on Apple platforms, or the relay).
+        if (_supportsSettingsFiles) ...[
+          SettingNavigationTile(
+            focusNode: _focusTracker.get(_kExportSettings),
+            icon: Symbols.upload_rounded,
+            title: t.settings.exportSettings,
+            subtitle: t.settings.exportSettingsDescription,
+            onTap: _handleExportSettings,
+          ),
+          SettingNavigationTile(
+            focusNode: _focusTracker.get(_kImportSettings),
+            icon: Symbols.download_rounded,
+            title: t.settings.importSettings,
+            subtitle: t.settings.importSettingsDescription,
+            onTap: _showImportSettingsDialog,
+          ),
+        ],
+        if (ICloudSettingsSyncService.isSupported)
+          SettingSwitchTile(
+            focusNode: _focusTracker.get(_kICloudSettingsSync),
+            pref: settings.SettingsService.icloudSettingsSync,
+            icon: Symbols.cloud_sync_rounded,
+            title: t.settings.icloudSettingsSync,
+            subtitle: t.settings.icloudSettingsSyncDescription,
+            onAfterWrite: _onICloudSettingsSyncChanged,
+          ),
+        // TODO: Cloud settings backup off Apple platforms (#1795) could use the relay.
       ],
     );
   }
@@ -867,6 +881,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
+  Future<void> _onICloudSettingsSyncChanged(bool enabled) async {
+    if (enabled) await ICloudSettingsSyncService.adopt(context);
+  }
+
   Future<void> _showImportSettingsDialog() async {
     final confirmed = await showConfirmDialog(
       context,
@@ -891,16 +909,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           if (!mounted) return;
           if (result == null) return; // user cancelled file picker
 
-          final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-          final librariesProvider = context.read<LibrariesProvider>();
-
-          // Import wrote directly to SharedPreferences, bypassing `write`. Push
-          // fresh values into active listenables before providers re-read settings.
-          _settingsService.refreshListenables();
-          await hiddenLibrariesProvider.refresh();
-          unawaited(librariesProvider.refresh());
-          if (!mounted) return;
-          final failures = await const SettingsMutationService().applyStoredEffects(
+          // Import wrote directly to SharedPreferences, bypassing `write`.
+          final failures = await const SettingsMutationService().applyImportedSettings(
             context,
             previousRootConfiguration: previousRootConfiguration,
           );

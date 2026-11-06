@@ -874,6 +874,9 @@ class SettingsService extends BaseSharedPreferencesService {
   /// at all. UI-only: catalog sources stay connected so watchlist surfaces
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
+
+  /// Whether this device syncs its portable settings through iCloud.
+  static const icloudSettingsSync = BoolPref('icloud_settings_sync');
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
 
   /// Sidebar Libraries section expansion. Persisted so a collapsed section
@@ -1643,6 +1646,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberedBrightnessLevel,
     refusedVideoCodecs,
     audioOutputDevice,
+    icloudSettingsSync,
   ];
 
   /// Settings that "Reset All Settings" actually resets.
