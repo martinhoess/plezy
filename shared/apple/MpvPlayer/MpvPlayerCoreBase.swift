@@ -593,8 +593,41 @@ class MpvPlayerCoreBase: NSObject {
       wakeupContext
     )
     lifecycleLock.unlock()
+    #if os(iOS) || os(tvOS)
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(audioRouteDidChange(_:)),
+        name: AVAudioSession.routeChangeNotification, object: nil)
+    #endif
     return true
   }
+
+  #if os(iOS) || os(tvOS)
+    @objc private func audioRouteDidChange(_ notification: Notification) {
+      guard
+        let previous = notification.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
+          as? AVAudioSessionRouteDescription
+      else { return }
+      handleAudioRouteChange(
+        from: previous.outputs.map(\.uid),
+        to: AVAudioSession.sharedInstance().currentRoute.outputs.map(\.uid))
+    }
+
+    /// ao_audiounit sizes its stream from the route it opens on and never
+    /// looks again: connecting AirPods to an Apple TV mid-playback left a
+    /// 5.1/7.1 stream on the two-channel route, which RemoteIO plays with the
+    /// wrong channels. Reloading the output re-reads the route, as restarting
+    /// playback did. Only a change of output port counts; the category and
+    /// activation changes the AO makes itself keep the same ports, so the
+    /// reload cannot retrigger itself. Other AOs follow the route on their own.
+    func handleAudioRouteChange(from previousOutputs: [String], to currentOutputs: [String]) {
+      guard previousOutputs != currentOutputs else { return }
+      getPropertyAsync("current-ao") { [weak self] ao in
+        guard case .success("audiounit") = ao else { return }
+        MpvLog.debug("[MpvPlayerCore] Audio route changed, reloading audiounit output")
+        self?.command(["ao-reload"])
+      }
+    }
+  #endif
 
   /// The `audio-spdif` codecs for Audio Passthrough on iPhone, iPad and Apple
   /// TV: Dolby Digital (Plus) for the system decoder and, from 26, TrueHD and
@@ -1016,6 +1049,10 @@ class MpvPlayerCoreBase: NSObject {
 
   /// `onDestroyed` runs on `queue` once mpv, its VO included, is gone.
   func disposeSharedState(destroySynchronously: Bool, onDestroyed: (() -> Void)? = nil) {
+    #if os(iOS) || os(tvOS)
+      NotificationCenter.default.removeObserver(
+        self, name: AVAudioSession.routeChangeNotification, object: nil)
+    #endif
     cancelPendingRequests()
 
     cacheLock.lock()

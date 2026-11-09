@@ -21,6 +21,22 @@ private final class TvosControllablePropertyCore: MpvPlayerCoreBase {
   }
 }
 
+private final class TvosRecordingAudioOutputCore: MpvPlayerCoreBase {
+  var currentAo: String?
+  var propertyReads: [String] = []
+  var commands: [[String]] = []
+
+  override func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
+    propertyReads.append(name)
+    completion(.success(name == "current-ao" ? currentAo : nil))
+  }
+
+  override func commandAsync(_ args: [String], completion: @escaping (Result<Int64?, Error>) -> Void) {
+    commands.append(args)
+    completion(.success(nil))
+  }
+}
+
 private final class TvosRecordingMpvPlugin: MpvPluginShared {
   var coreBase: MpvPlayerCoreBase?
   var eventSink: FlutterEventSink?
@@ -113,6 +129,37 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(25), 25)
     XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(27), 27)
     XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(0), 0)
+  }
+
+  func testOutputPortChangeReloadsAudiounitOutput() {
+    let core = TvosRecordingAudioOutputCore()
+    core.currentAo = "audiounit"
+
+    core.handleAudioRouteChange(from: ["hdmi-out"], to: ["airpods-a2dp"])
+
+    XCTAssertEqual(core.commands, [["ao-reload"]])
+  }
+
+  func testRouteChangeWithSameOutputPortsKeepsAudioOutput() {
+    let core = TvosRecordingAudioOutputCore()
+    core.currentAo = "audiounit"
+
+    // The category and activation changes ao_audiounit makes while opening.
+    core.handleAudioRouteChange(from: ["hdmi-out"], to: ["hdmi-out"])
+
+    XCTAssertEqual(core.propertyReads, [])
+    XCTAssertEqual(core.commands, [])
+  }
+
+  func testOutputPortChangeLeavesOtherAudioOutputsAlone() {
+    for ao in ["avfoundation", "spatial", nil] as [String?] {
+      let core = TvosRecordingAudioOutputCore()
+      core.currentAo = ao
+
+      core.handleAudioRouteChange(from: ["airpods-a2dp"], to: ["hdmi-out"])
+
+      XCTAssertEqual(core.commands, [], "current-ao \(ao ?? "none")")
+    }
   }
 
   private func invokeSetProperty(_ plugin: TvosRecordingMpvPlugin) -> [Any?] {
