@@ -594,37 +594,85 @@ class MpvPlayerCoreBase: NSObject {
     )
     lifecycleLock.unlock()
     #if os(iOS) || os(tvOS)
-      NotificationCenter.default.addObserver(
-        self, selector: #selector(audioRouteDidChange(_:)),
-        name: AVAudioSession.routeChangeNotification, object: nil)
+      observeAudioRoute()
     #endif
     return true
   }
 
   #if os(iOS) || os(tvOS)
+    /// How long the route has to stay quiet before the output is reloaded.
+    /// One connection posts several notifications, and right after a Bluetooth
+    /// route comes up the session can still report the old route's channel
+    /// count; ao_audiounit reads it once, on open.
+    var audioRouteSettleDelay: DispatchTimeInterval { .seconds(1) }
+
+    var currentAudioOutputPorts: [String] {
+      AVAudioSession.sharedInstance().currentRoute.outputs.map(\.uid)
+    }
+
+    private let audioRouteLock = NSLock()
+    /// The output ports the last route check settled on.
+    private var settledAudioOutputPorts: [String] = []
+    private var pendingAudioRouteCheck: DispatchWorkItem?
+
+    func observeAudioRoute() {
+      audioRouteLock.lock()
+      settledAudioOutputPorts = currentAudioOutputPorts
+      audioRouteLock.unlock()
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(audioRouteDidChange(_:)),
+        name: AVAudioSession.routeChangeNotification, object: nil)
+    }
+
+    private func stopObservingAudioRoute() {
+      NotificationCenter.default.removeObserver(
+        self, name: AVAudioSession.routeChangeNotification, object: nil)
+      audioRouteLock.lock()
+      pendingAudioRouteCheck?.cancel()
+      pendingAudioRouteCheck = nil
+      audioRouteLock.unlock()
+    }
+
+    /// Every reason counts: whether AirPods arrive as a new device, an
+    /// override or a configuration change, the ports decide. Each notification
+    /// restarts the wait, so a burst ends in one check.
     @objc private func audioRouteDidChange(_ notification: Notification) {
-      guard
-        let previous = notification.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
-          as? AVAudioSessionRouteDescription
-      else { return }
-      handleAudioRouteChange(
-        from: previous.outputs.map(\.uid),
-        to: AVAudioSession.sharedInstance().currentRoute.outputs.map(\.uid))
+      let reason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+      MpvLog.debug("[MpvPlayerCore] Audio route change, reason \(reason.map { "\($0)" } ?? "none")")
+      let check = DispatchWorkItem { [weak self] in self?.reloadAudioOutputIfRouteChanged() }
+      audioRouteLock.lock()
+      pendingAudioRouteCheck?.cancel()
+      pendingAudioRouteCheck = check
+      audioRouteLock.unlock()
+      queue.asyncAfter(deadline: .now() + audioRouteSettleDelay, execute: check)
     }
 
     /// ao_audiounit sizes its stream from the route it opens on and never
     /// looks again: connecting AirPods to an Apple TV mid-playback left a
     /// 5.1/7.1 stream on the two-channel route, which RemoteIO plays with the
     /// wrong channels. Reloading the output re-reads the route, as restarting
-    /// playback did. Only a change of output port counts; the category and
-    /// activation changes the AO makes itself keep the same ports, so the
-    /// reload cannot retrigger itself. Other AOs follow the route on their own.
-    func handleAudioRouteChange(from previousOutputs: [String], to currentOutputs: [String]) {
-      guard previousOutputs != currentOutputs else { return }
+    /// playback did; mpv keeps position and pause across it, with a short gap
+    /// while the output reopens.
+    ///
+    /// The check compares against the ports it last settled on, not the
+    /// notification's previous route, so the category and activation changes
+    /// the reload makes itself end on the same ports and cannot retrigger it.
+    /// The stereo limit already opens a two-channel stream, which fits every
+    /// route. Other AOs follow the route on their own.
+    private func reloadAudioOutputIfRouteChanged() {
+      let ports = currentAudioOutputPorts
+      audioRouteLock.lock()
+      let changed = ports != settledAudioOutputPorts
+      settledAudioOutputPorts = ports
+      audioRouteLock.unlock()
+      guard changed else { return }
       getPropertyAsync("current-ao") { [weak self] ao in
         guard case .success("audiounit") = ao else { return }
-        MpvLog.debug("[MpvPlayerCore] Audio route changed, reloading audiounit output")
-        self?.command(["ao-reload"])
+        self?.getPropertyAsync("audio-channels") { channels in
+          guard case .success(let channels) = channels, channels != "stereo" else { return }
+          MpvLog.debug("[MpvPlayerCore] Audio output ports changed, reloading audiounit output")
+          self?.command(["ao-reload"])
+        }
       }
     }
   #endif
@@ -1050,8 +1098,7 @@ class MpvPlayerCoreBase: NSObject {
   /// `onDestroyed` runs on `queue` once mpv, its VO included, is gone.
   func disposeSharedState(destroySynchronously: Bool, onDestroyed: (() -> Void)? = nil) {
     #if os(iOS) || os(tvOS)
-      NotificationCenter.default.removeObserver(
-        self, name: AVAudioSession.routeChangeNotification, object: nil)
+      stopObservingAudioRoute()
     #endif
     cancelPendingRequests()
 

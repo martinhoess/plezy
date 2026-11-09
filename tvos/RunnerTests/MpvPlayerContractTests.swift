@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Flutter
 import XCTest
@@ -22,13 +23,36 @@ private final class TvosControllablePropertyCore: MpvPlayerCoreBase {
 }
 
 private final class TvosRecordingAudioOutputCore: MpvPlayerCoreBase {
-  var currentAo: String?
-  var propertyReads: [String] = []
+  var currentAo: String? = "audiounit"
+  var audioChannels: String? = "auto-safe"
+  var outputPorts = ["hdmi-out"]
   var commands: [[String]] = []
+  /// Counted and fulfilled by each route check, which reads the ports once.
+  var routeChecks = 0
+  var routeChecked: XCTestExpectation?
+  private var observing = false
+
+  override var audioRouteSettleDelay: DispatchTimeInterval { .milliseconds(100) }
+
+  override var currentAudioOutputPorts: [String] {
+    if observing {
+      routeChecks += 1
+      routeChecked?.fulfill()
+    }
+    return outputPorts
+  }
+
+  override func observeAudioRoute() {
+    super.observeAudioRoute()
+    observing = true
+  }
 
   override func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
-    propertyReads.append(name)
-    completion(.success(name == "current-ao" ? currentAo : nil))
+    switch name {
+    case "current-ao": completion(.success(currentAo))
+    case "audio-channels": completion(.success(audioChannels))
+    default: completion(.success(nil))
+    }
   }
 
   override func commandAsync(_ args: [String], completion: @escaping (Result<Int64?, Error>) -> Void) {
@@ -131,35 +155,131 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(0), 0)
   }
 
-  func testOutputPortChangeReloadsAudiounitOutput() {
-    let core = TvosRecordingAudioOutputCore()
-    core.currentAo = "audiounit"
+  func testConnectingAirPodsReloadsAudiounitOutput() {
+    let core = observingAudioRouteCore()
 
-    core.handleAudioRouteChange(from: ["hdmi-out"], to: ["airpods-a2dp"])
+    core.outputPorts = ["airpods-a2dp"]
+    // Posted without a previous route: the check does not depend on one.
+    postRouteChange(core, reasons: [.newDeviceAvailable])
 
     XCTAssertEqual(core.commands, [["ao-reload"]])
   }
 
-  func testRouteChangeWithSameOutputPortsKeepsAudioOutput() {
-    let core = TvosRecordingAudioOutputCore()
-    core.currentAo = "audiounit"
+  func testDisconnectingAirPodsReloadsBackToHdmi() {
+    let core = observingAudioRouteCore()
+    core.outputPorts = ["airpods-a2dp"]
+    postRouteChange(core, reasons: [.newDeviceAvailable])
 
-    // The category and activation changes ao_audiounit makes while opening.
-    core.handleAudioRouteChange(from: ["hdmi-out"], to: ["hdmi-out"])
+    core.outputPorts = ["hdmi-out"]
+    postRouteChange(core, reasons: [.oldDeviceUnavailable])
 
-    XCTAssertEqual(core.propertyReads, [])
-    XCTAssertEqual(core.commands, [])
+    XCTAssertEqual(core.commands, [["ao-reload"], ["ao-reload"]])
   }
 
-  func testOutputPortChangeLeavesOtherAudioOutputsAlone() {
+  func testReasonsBeyondDeviceChangesStillReloadOnNewPorts() {
+    for reason: AVAudioSession.RouteChangeReason in [.override, .routeConfigurationChange, .categoryChange] {
+      let core = observingAudioRouteCore()
+
+      core.outputPorts = ["airpods-a2dp"]
+      postRouteChange(core, reasons: [reason])
+
+      XCTAssertEqual(core.commands, [["ao-reload"]], "reason \(reason.rawValue)")
+    }
+  }
+
+  func testBurstOfRouteChangesReloadsOnce() {
+    let core = observingAudioRouteCore()
+
+    // The ports pass through an empty route before the AirPods settle.
+    postRouteChange(core, reasons: [.oldDeviceUnavailable, .newDeviceAvailable, .routeConfigurationChange]) {
+      core.outputPorts = $0 < 2 ? [] : ["airpods-a2dp"]
+    }
+    // Checks the burst failed to cancel would be due by now.
+    RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+    core.queue.sync {}
+
+    XCTAssertEqual(core.routeChecks, 1)
+    XCTAssertEqual(core.commands, [["ao-reload"]])
+  }
+
+  func testRouteChangesOnTheSamePortsKeepAudioOutput() {
+    let core = observingAudioRouteCore()
+    core.outputPorts = ["airpods-a2dp"]
+    postRouteChange(core, reasons: [.newDeviceAvailable])
+
+    // The category and activation changes the reloaded output makes itself.
+    postRouteChange(core, reasons: [.categoryChange, .routeConfigurationChange])
+
+    XCTAssertEqual(core.commands, [["ao-reload"]])
+  }
+
+  func testChannelLimitsReloadExceptStereo() {
+    for (channels, reloads) in [("auto-safe", true), ("stereo,5.1", true), ("stereo", false)] {
+      let core = observingAudioRouteCore()
+      core.audioChannels = channels
+
+      core.outputPorts = ["airpods-a2dp"]
+      postRouteChange(core, reasons: [.newDeviceAvailable])
+
+      XCTAssertEqual(core.commands, reloads ? [["ao-reload"]] : [], "audio-channels \(channels)")
+    }
+  }
+
+  func testRouteChangeLeavesOtherAudioOutputsAlone() {
     for ao in ["avfoundation", "spatial", nil] as [String?] {
-      let core = TvosRecordingAudioOutputCore()
+      let core = observingAudioRouteCore()
       core.currentAo = ao
 
-      core.handleAudioRouteChange(from: ["airpods-a2dp"], to: ["hdmi-out"])
+      core.outputPorts = ["airpods-a2dp"]
+      postRouteChange(core, reasons: [.newDeviceAvailable])
 
       XCTAssertEqual(core.commands, [], "current-ao \(ao ?? "none")")
     }
+  }
+
+  func testDisposedCoreIgnoresPendingAndLaterRouteChanges() {
+    let core = observingAudioRouteCore()
+    core.outputPorts = ["airpods-a2dp"]
+    let pending = expectation(description: "no route check")
+    pending.isInverted = true
+    core.routeChecked = pending
+
+    NotificationCenter.default.post(name: AVAudioSession.routeChangeNotification, object: nil)
+    core.disposeSharedState(destroySynchronously: true)
+    NotificationCenter.default.post(name: AVAudioSession.routeChangeNotification, object: nil)
+
+    wait(for: [pending], timeout: 0.5)
+    XCTAssertEqual(core.commands, [])
+  }
+
+  private func observingAudioRouteCore() -> TvosRecordingAudioOutputCore {
+    let core = TvosRecordingAudioOutputCore()
+    core.observeAudioRoute()
+    addTeardownBlock { core.disposeSharedState(destroySynchronously: true) }
+    return core
+  }
+
+  /// Posts one notification per reason, back to back, then waits for the one
+  /// route check they settle into and for the reload it may issue.
+  private func postRouteChange(
+    _ core: TvosRecordingAudioOutputCore,
+    reasons: [AVAudioSession.RouteChangeReason],
+    beforeEach: (Int) -> Void = { _ in }
+  ) {
+    let checked = expectation(description: "route check")
+    // A route change the system posts meanwhile only adds a check.
+    checked.assertForOverFulfill = false
+    core.routeChecked = checked
+    for (index, reason) in reasons.enumerated() {
+      beforeEach(index)
+      NotificationCenter.default.post(
+        name: AVAudioSession.routeChangeNotification, object: nil,
+        userInfo: [AVAudioSessionRouteChangeReasonKey: reason.rawValue])
+    }
+    wait(for: [checked], timeout: 2)
+    core.routeChecked = nil
+    // The check runs on the core's queue.
+    core.queue.sync {}
   }
 
   private func invokeSetProperty(_ plugin: TvosRecordingMpvPlugin) -> [Any?] {
