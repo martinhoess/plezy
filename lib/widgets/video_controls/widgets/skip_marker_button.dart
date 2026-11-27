@@ -103,10 +103,14 @@ class SkipMarkerButton extends StatelessWidget {
                       children: [
                         Expanded(
                           flex: (autoSkipProgress * 100).round(),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                          // Below the focus scope, so a focused accent pill
+                          // can switch the fill to onPrimary.
+                          child: Builder(
+                            builder: (context) => Container(
+                              decoration: BoxDecoration(
+                                color: _countdownColor(context).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                              ),
                             ),
                           ),
                         ),
@@ -126,6 +130,14 @@ class SkipMarkerButton extends StatelessWidget {
   }
 
   void _activate() => onActivate();
+
+  /// primary vanishes on a pill filled with the accent, so that pill gets
+  /// onPrimary.
+  static Color _countdownColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onAccentPill = (CardFocusScope.maybeOf(context) ?? false) && playerFocusAccent(context) != null;
+    return onAccentPill ? colorScheme.onPrimary : colorScheme.primary;
+  }
 }
 
 /// The skip button's pill and its focus chrome.
@@ -149,25 +161,44 @@ class _SkipMarkerPill extends StatelessWidget {
     final accent = showFocus ? playerFocusAccent(context) : null;
     final radius = tokens(context).radiusSm;
     final duration = FocusTheme.getAnimationDuration(context);
-    return AnimatedContainer(
+    final pill = AnimatedContainer(
       duration: duration,
       curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.all(_ringGap),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius + _ringWidth + _ringGap),
-        border: Border.all(color: showFocus && accent == null ? Colors.white : Colors.transparent, width: _ringWidth),
+        color: accent ?? Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: AnimatedContainer(
-        duration: duration,
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: accent ?? Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(radius),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))],
+      child: child(accent == null ? Colors.black : Theme.of(context).colorScheme.onPrimary),
+    );
+    // The ring sits outside the pill's rect, so it never moves or grows the
+    // button, its tap target or the countdown overlay.
+    const ringInset = -(_ringWidth + _ringGap);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        pill,
+        Positioned.fill(
+          left: ringInset,
+          top: ringInset,
+          right: ringInset,
+          bottom: ringInset,
+          child: IgnorePointer(
+            child: AnimatedContainer(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(radius + _ringWidth + _ringGap),
+                border: Border.all(
+                  color: showFocus && accent == null ? Colors.white : Colors.transparent,
+                  width: _ringWidth,
+                ),
+              ),
+            ),
+          ),
         ),
-        child: child(accent == null ? Colors.black : Theme.of(context).colorScheme.onPrimary),
-      ),
+      ],
     );
   }
 }
