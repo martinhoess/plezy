@@ -989,8 +989,6 @@ class _Translations$videoControls$pt_PT extends Translations$videoControls$pt {
 	@override String get rotationLockButton => 'Bloquear rotação';
 	@override String get lockScreen => 'Bloquear ecrã';
 	@override String get screenLockButton => 'Bloquear ecrã';
-	@override String get tapToUnlock => 'Toque para desbloquear';
-	@override String get tapAgainToUnlock => 'Toque novamente para desbloquear';
 	@override String get timelineSlider => 'Linha do tempo do vídeo';
 	@override String get volumeSlider => 'Nível de volume';
 	@override String endsAt({required Object time}) => 'Termina às ${time}';
@@ -4245,8 +4243,6 @@ extension on TranslationsPtPt {
 			'videoControls.rotationLockButton' => 'Bloquear rotação',
 			'videoControls.lockScreen' => 'Bloquear ecrã',
 			'videoControls.screenLockButton' => 'Bloquear ecrã',
-			'videoControls.tapToUnlock' => 'Toque para desbloquear',
-			'videoControls.tapAgainToUnlock' => 'Toque novamente para desbloquear',
 			'videoControls.timelineSlider' => 'Linha do tempo do vídeo',
 			'videoControls.volumeSlider' => 'Nível de volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Termina às ${time}',
@@ -4461,10 +4457,10 @@ extension on TranslationsPtPt {
 			'profiles.pinProtectionOptional' => 'Proteção por PIN (opcional)',
 			'profiles.pinExplain' => 'PIN de 4 dígitos necessário para mudar de perfil.',
 			'profiles.continueButton' => 'Continuar',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sectionTitle' => 'Ligações',
 			'connections.addConnection' => 'Adicionar ligação',
 			'connections.addConnectionSubtitleNoProfile' => 'Inicie sessão no Plex ou ligue um servidor Jellyfin ou Emby',
@@ -4975,10 +4971,10 @@ extension on TranslationsPtPt {
 			'liveTv.guideReloadFailed' => 'Não foi possível atualizar o guia',
 			'liveTv.rulesProcessRequested' => 'Reavaliação de regras pedida',
 			'liveTv.rulesProcessFailed' => 'Não foi possível reavaliar as regras de gravação',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Gravar programa',
 			'liveTv.recordSettings.startEarly' => 'Começar antes (segundos)',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.endLate' => 'Terminar depois (segundos)',
 			'liveTv.recordSettings.newOnly' => 'Apenas episódios novos',
 			'liveTv.recordSettings.anyChannel' => 'Gravar em qualquer canal',
@@ -5489,10 +5485,10 @@ extension on TranslationsPtPt {
 			'performanceOverlay.speed' => 'Velocidade',
 			'performanceOverlay.player' => 'Reprodutor',
 			'performanceOverlay.playMethod' => 'Método de reprodução',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memória',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

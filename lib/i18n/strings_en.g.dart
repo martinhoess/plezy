@@ -2441,12 +2441,6 @@ class Translations$videoControls$en {
 	/// en: 'Hold to unlock'
 	String get holdToUnlock => 'Hold to unlock';
 
-	/// en: 'Tap to unlock'
-	String get tapToUnlock => 'Tap to unlock';
-
-	/// en: 'Tap again to unlock'
-	String get tapAgainToUnlock => 'Tap again to unlock';
-
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
 
@@ -8945,8 +8939,6 @@ extension on Translations {
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
 			'videoControls.holdToUnlock' => 'Hold to unlock',
-			'videoControls.tapToUnlock' => 'Tap to unlock',
-			'videoControls.tapAgainToUnlock' => 'Tap again to unlock',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
@@ -9157,10 +9149,10 @@ extension on Translations {
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
@@ -9671,10 +9663,10 @@ extension on Translations {
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
@@ -10185,10 +10177,10 @@ extension on Translations {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',

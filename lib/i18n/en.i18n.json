@@ -869,8 +869,6 @@
     "lockScreen": "Lock screen",
     "screenLockButton": "Screen lock",
     "holdToUnlock": "Hold to unlock",
-    "tapToUnlock": "Tap to unlock",
-    "tapAgainToUnlock": "Tap again to unlock",
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
     "endsAt": "Ends at ${time}",
