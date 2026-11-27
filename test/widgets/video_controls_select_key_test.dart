@@ -14,6 +14,7 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/models/hotkey_model.dart';
+import 'package:plezy/services/apple_tv_remote_touch_service.dart';
 import 'package:plezy/services/keyboard_shortcuts_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/shortcut_action.dart';
@@ -709,6 +710,56 @@ void main() {
         await press(tester, LogicalKeyboardKey.select);
 
         expect(toggles, 1, reason: 'one press must toggle playback, not merely raise the chrome');
+      },
+    );
+
+    // A thumb resting on the Siri Remote clickpad, then clicking, was the
+    // suspected path to an accidental pause: the click must still reach the
+    // skip button. Touches below the step threshold emit no key, so nothing
+    // reports non-pointer input before the marker appears.
+    playerTest(
+      'a clickpad touch before the intro leaves Select on the skip button',
+      markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000)],
+      (tester) async {
+        final keys = <LogicalKeyboardKey>[];
+        final touch = AppleTvRemoteTouchService(simulateKeyPress: keys.add, scheduleFrame: () {});
+        await touch.handleMessage({'type': 'started', 'x': 500.0, 'y': 500.0});
+        await touch.handleMessage({'type': 'move', 'x': 440.0, 'y': 520.0});
+        await touch.handleMessage({'type': 'ended'});
+        expect(keys, isEmpty, reason: 'precondition: a resting thumb is no swipe');
+
+        player.emitPosition(const Duration(seconds: 15));
+        await tester.pumpAndSettle();
+        expect(currentMode(tester), InputMode.keyboard);
+        expect(focusLabel(), 'SkipMarkerButton');
+
+        await press(tester, LogicalKeyboardKey.select);
+
+        expect(player.state.position, const Duration(seconds: 45), reason: 'Select activated the skip');
+        expect(toggles, 0, reason: 'the click must not pause');
+      },
+    );
+
+    playerTest(
+      'a clickpad swipe before the intro leaves Select on the skip button',
+      markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000)],
+      (tester) async {
+        final keys = <LogicalKeyboardKey>[];
+        final touch = AppleTvRemoteTouchService(simulateKeyPress: keys.add, scheduleFrame: () {});
+        await touch.handleMessage({'type': 'started', 'x': 500.0, 'y': 500.0});
+        await touch.handleMessage({'type': 'move', 'x': 50.0, 'y': 500.0});
+        await touch.handleMessage({'type': 'ended'});
+        expect(keys, [LogicalKeyboardKey.arrowLeft], reason: 'precondition: one swipe step');
+        await press(tester, keys.single);
+
+        player.emitPosition(const Duration(seconds: 15));
+        await tester.pumpAndSettle();
+        expect(focusLabel(), 'SkipMarkerButton');
+
+        await press(tester, LogicalKeyboardKey.select);
+
+        expect(player.state.position, const Duration(seconds: 45), reason: 'Select activated the skip');
+        expect(toggles, 0, reason: 'the click must not pause');
       },
     );
   });

@@ -50,7 +50,7 @@ class PlayerFocusDisc extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showFocus = CardFocusScope.maybeOf(context) ?? false;
-    final accent = _playerFocusAccent(context);
+    final accent = playerFocusAccent(context);
     final (fill, onFill) = switch ((isActive, accent)) {
       (true, null) => (_activeFill, Colors.black),
       (false, final color?) => (color, Theme.of(context).colorScheme.onPrimary),
@@ -73,14 +73,14 @@ class PlayerFocusDisc extends StatelessWidget {
 /// The theme's accent when it has a hue of its own, else null. The monochrome
 /// built-ins set the accent to the text colour, an off-white that would read
 /// as a dirty white disc, so they keep the plain white treatment.
-Color? _playerFocusAccent(BuildContext context) {
+Color? playerFocusAccent(BuildContext context) {
   final tokens = Theme.of(context).extension<MonoTokens>();
   if (tokens == null || tokens.accent == tokens.text) return null;
   return tokens.accent;
 }
 
 /// Fill of the focused-timeline knob, matching an idle [PlayerFocusDisc].
-Color playerFocusKnobColor(BuildContext context) => _playerFocusAccent(context) ?? Colors.white;
+Color playerFocusKnobColor(BuildContext context) => playerFocusAccent(context) ?? Colors.white;
 
 /// Drop shadow that separates focused player chrome from a bright frame.
 const BoxShadow playerFocusShadow = BoxShadow(color: Color(0x59000000), blurRadius: 14, offset: Offset(0, 4));

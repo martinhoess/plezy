@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../focus/card_focus_scope.dart';
 import '../../../focus/focus_theme.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../app_icon.dart';
+import 'player_focus_disc.dart';
 
 class SkipMarkerButton extends StatelessWidget {
   final MediaMarker marker;
@@ -64,8 +66,7 @@ class SkipMarkerButton extends StatelessWidget {
       focusNode: focusNode,
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
-      useBackgroundFocus: true,
-      focusColor: FocusTheme.onMediaFocusFill,
+      delegateFocusBorder: true,
       autoScroll: false,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
@@ -81,24 +82,16 @@ class SkipMarkerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
-                  ],
-                ),
-                child: Row(
+              _SkipMarkerPill(
+                child: (labelColor) => Row(
                   mainAxisSize: .min,
                   children: [
                     Text(
                       buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: .w600),
+                      style: TextStyle(color: labelColor, fontSize: 16, fontWeight: .w600),
                     ),
                     const SizedBox(width: 8),
-                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                    AppIcon(buttonIcon, fill: 1, color: labelColor, size: 20),
                   ],
                 ),
               ),
@@ -133,4 +126,48 @@ class SkipMarkerButton extends StatelessWidget {
   }
 
   void _activate() => onActivate();
+}
+
+/// The skip button's pill and its focus chrome.
+///
+/// The app-wide translucent focus fill vanished behind the 90 % white pill, so
+/// a focused button looked idle on a TV. Like [PlayerFocusDisc], a theme with a
+/// coloured accent fills the focused pill with that accent; the monochrome
+/// themes keep the white pill and ring it instead, with a gap so the ring
+/// reads against the pill.
+class _SkipMarkerPill extends StatelessWidget {
+  const _SkipMarkerPill({required this.child});
+
+  final Widget Function(Color labelColor) child;
+
+  static const double _ringWidth = 3;
+  static const double _ringGap = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final showFocus = CardFocusScope.maybeOf(context) ?? false;
+    final accent = showFocus ? playerFocusAccent(context) : null;
+    final radius = tokens(context).radiusSm;
+    final duration = FocusTheme.getAnimationDuration(context);
+    return AnimatedContainer(
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.all(_ringGap),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius + _ringWidth + _ringGap),
+        border: Border.all(color: showFocus && accent == null ? Colors.white : Colors.transparent, width: _ringWidth),
+      ),
+      child: AnimatedContainer(
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: accent ?? Colors.white.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(radius),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: child(accent == null ? Colors.black : Theme.of(context).colorScheme.onPrimary),
+      ),
+    );
+  }
 }
