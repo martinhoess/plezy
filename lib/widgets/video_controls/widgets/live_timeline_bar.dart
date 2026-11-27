@@ -238,6 +238,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
                       painter: _LiveTimelinePainter(
                         positionFraction: positionFraction,
                         showFocusKnob: CardFocusScope.maybeOf(context) ?? false,
+                        focusKnobColor: playerFocusKnobColor(context),
                       ),
                     ),
                   ),
@@ -286,7 +287,9 @@ class _LiveTimelinePainter extends CustomPainter {
   /// D-pad focus: draw the shared focus knob instead of the handle (#2383).
   final bool showFocusKnob;
 
-  _LiveTimelinePainter({required this.positionFraction, required this.showFocusKnob});
+  final Color focusKnobColor;
+
+  _LiveTimelinePainter({required this.positionFraction, required this.showFocusKnob, required this.focusKnobColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -315,7 +318,7 @@ class _LiveTimelinePainter extends CustomPainter {
     }
 
     if (showFocusKnob) {
-      paintPlayerFocusKnob(canvas, Offset(posX, trackY));
+      paintPlayerFocusKnob(canvas, Offset(posX, trackY), focusKnobColor);
       return;
     }
 
@@ -333,5 +336,7 @@ class _LiveTimelinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LiveTimelinePainter oldDelegate) =>
-      positionFraction != oldDelegate.positionFraction || showFocusKnob != oldDelegate.showFocusKnob;
+      positionFraction != oldDelegate.positionFraction ||
+      showFocusKnob != oldDelegate.showFocusKnob ||
+      focusKnobColor != oldDelegate.focusKnobColor;
 }

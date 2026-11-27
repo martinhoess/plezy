@@ -375,7 +375,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       // D-pad focus swaps the 4x20 handle for a shadowed knob
                       // (#2383); in pointer mode the handle always shows, and
                       // an unfocused timeline in D-pad mode shows none.
-                      thumbShape: showFocus ? const _FocusKnobThumbShape() : null,
+                      thumbShape: showFocus ? _FocusKnobThumbShape(playerFocusKnobColor(context)) : null,
                       thumbSize: WidgetStatePropertyAll(
                         (!isKeyboardMode || _isFocused) ? const Size(4, 20) : Size.zero,
                       ),
@@ -511,7 +511,9 @@ class _ScrubFrameView extends StatelessWidget {
 }
 
 class _FocusKnobThumbShape extends SliderComponentShape {
-  const _FocusKnobThumbShape();
+  const _FocusKnobThumbShape(this.color);
+
+  final Color color;
 
   @override
   Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size.fromRadius(playerFocusKnobRadius);
@@ -530,5 +532,5 @@ class _FocusKnobThumbShape extends SliderComponentShape {
     required double value,
     required double textScaleFactor,
     required Size sizeWithOverflow,
-  }) => paintPlayerFocusKnob(context.canvas, center);
+  }) => paintPlayerFocusKnob(context.canvas, center, color);
 }
