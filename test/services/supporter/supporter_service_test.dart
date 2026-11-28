@@ -131,6 +131,27 @@ void main() {
     });
   });
 
+  // Fork-only. The define is compile-time: run once as is, and once with
+  // `--dart-define=SUPPORTER_MODE=iap --dart-define=PLEZY_SUPPORTER_UNLOCKED=true
+  // --plain-name PLEZY_SUPPORTER_UNLOCKED`.
+  group('PLEZY_SUPPORTER_UNLOCKED', () {
+    const forkUnlocked = bool.fromEnvironment('PLEZY_SUPPORTER_UNLOCKED');
+
+    test('a purchasable build without a purchase is unlocked exactly when the build defines it', () async {
+      final service = SupporterService.forTesting(availability: SupporterAvailability.purchasable, purchased: false);
+      addTearDown(service.dispose);
+
+      await service.init();
+
+      expect(service.isUnlocked, forkUnlocked);
+    });
+
+    test('the startup frame agrees', () async {
+      final settings = await SettingsService.getInstance();
+      expect(SupporterService.startupUnlocked(settings), supporterBuildMode == SupporterMode.iap && forkUnlocked);
+    });
+  });
+
   test('free and hidden builds never touch billing', () async {
     for (final availability in [SupporterAvailability.free, SupporterAvailability.hidden]) {
       final platform = FakeInAppPurchasePlatform();

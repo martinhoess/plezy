@@ -11,6 +11,10 @@ import '../settings_service.dart';
 import 'supporter_mode.dart';
 import 'supporter_store.dart';
 
+/// Fork-only: builds with --dart-define=PLEZY_SUPPORTER_UNLOCKED=true treat a
+/// purchasable install as a Supporter; the store flow itself is unchanged.
+const _forkUnlocked = bool.fromEnvironment('PLEZY_SUPPORTER_UNLOCKED');
+
 /// The StoreKit plugin's error code for a product query that found nothing.
 const _storeKitNoProducts = 'storekit_no_response';
 
@@ -165,7 +169,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
   bool get isUnlocked => switch (availability) {
     SupporterAvailability.hidden => false,
     SupporterAvailability.free => true,
-    SupporterAvailability.purchasable => _purchased,
+    SupporterAvailability.purchasable => _forkUnlocked || _purchased,
   };
 
   /// Restores the last confirmed entitlement when the constructor could not
@@ -195,7 +199,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
       switch (supporterAvailabilityFor(supporterBuildMode, isPackagedInstall: PlatformDetector.isPackagedInstall())) {
         SupporterAvailability.hidden => false,
         SupporterAvailability.free => true,
-        SupporterAvailability.purchasable => settings.read(SettingsService.supporterEntitlementCached),
+        SupporterAvailability.purchasable => _forkUnlocked || settings.read(SettingsService.supporterEntitlementCached),
       };
 
   /// Loads the Supporter product and its localized price, once per process.

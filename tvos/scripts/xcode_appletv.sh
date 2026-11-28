@@ -431,6 +431,7 @@ BuildAppDebug() {
     -DTVOS_BUILD=true \
     -DSUPPORTER_MODE=iap \
     -DPLEZY_BROWSE_ONLY=true \
+    -DPLEZY_SUPPORTER_UNLOCKED=true \
     --output-dill "$OUTDIR/App.framework/flutter_assets/kernel_blob.bin" \
     "$FLUTTER_APPLICATION_PATH/lib/main.dart"
 
@@ -592,6 +593,7 @@ BuildAppRelease() {
     -DTVOS_BUILD=true \
     -DSUPPORTER_MODE=iap \
     -DPLEZY_BROWSE_ONLY=true \
+    -DPLEZY_SUPPORTER_UNLOCKED=true \
     --output-dill "$OUTDIR/app.dill" \
     "$FLUTTER_APPLICATION_PATH/lib/main.dart"
 
